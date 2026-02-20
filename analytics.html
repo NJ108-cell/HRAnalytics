@@ -1,0 +1,169 @@
+{% extends "base.html" %}
+
+{% block title %}ML Analytics - HR Analytics{% endblock %}
+
+{% block page_title %}Machine Learning Analytics{% endblock %}
+
+{% block header_actions %}
+<button onclick="trainModels()" class="btn btn-primary">
+    <i class="fas fa-cogs"></i>
+    Train Models
+</button>
+<button onclick="predictAll()" class="btn btn-success">
+    <i class="fas fa-brain"></i>
+    Predict All
+</button>
+{% endblock %}
+
+{% block content %}
+<!-- Model Training Info -->
+<div class="card" style="margin-bottom: 2rem; background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(236, 72, 153, 0.05));">
+    <div style="display: flex; align-items: start; gap: 1.5rem;">
+        <div style="flex-shrink: 0; width: 4rem; height: 4rem; border-radius: 1rem; background: linear-gradient(135deg, var(--primary-color), var(--secondary-color)); display: flex; align-items: center; justify-content: center; font-size: 2rem;">
+            <i class="fas fa-brain"></i>
+        </div>
+        <div style="flex: 1;">
+            <h3 style="margin-bottom: 0.5rem; font-size: 1.5rem;">ML Model Training</h3>
+            <p style="color: var(--text-muted); margin-bottom: 1rem;">
+                Train Random Forest models on your employee data to predict attrition risk and performance levels. 
+                The system uses advanced machine learning algorithms to identify patterns and provide actionable insights.
+            </p>
+            <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+                <div style="padding: 0.75rem 1rem; background: rgba(99, 102, 241, 0.1); border-radius: 0.5rem; border: 1px solid rgba(99, 102, 241, 0.3);">
+                    <strong>Attrition Model:</strong> Predicts if an employee will stay or leave
+                </div>
+                <div style="padding: 0.75rem 1rem; background: rgba(236, 72, 153, 0.1); border-radius: 0.5rem; border: 1px solid rgba(236, 72, 153, 0.3);">
+                    <strong>Performance Model:</strong> Classifies performance as Low, Medium, or High
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Department Risk Analysis -->
+{% if dept_risk %}
+<div class="card" style="margin-bottom: 2rem;">
+    <div class="card-header">
+        <h2 class="card-title">
+            <i class="fas fa-chart-bar"></i>
+            Department-wise Attrition Risk
+        </h2>
+    </div>
+    
+    <div class="table-container">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Department</th>
+                    <th>Total Predictions</th>
+                    <th>Average Risk Score</th>
+                    <th>Risk Level</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for dept, count, avg_risk in dept_risk %}
+                <tr>
+                    <td><strong>{{ dept }}</strong></td>
+                    <td>{{ count }}</td>
+                    <td>
+                        <div style="display: flex; align-items: center; gap: 1rem;">
+                            <div style="flex: 1; background: rgba(255,255,255,0.1); height: 8px; border-radius: 4px; overflow: hidden;">
+                                <div style="width: {{ (avg_risk or 0)|round(2) }}%; height: 100%; background: {% if (avg_risk or 0) > 70 %}var(--danger-color){% elif (avg_risk or 0) > 40 %}var(--warning-color){% else %}var(--success-color){% endif %};"></div>
+                            </div>
+                            <span style="min-width: 60px;"><strong>{{ (avg_risk or 0)|round(2) }}%</strong></span>
+                        </div>
+                    </td>
+                    <td>
+                        <span class="badge badge-{% if (avg_risk or 0) > 70 %}danger{% elif (avg_risk or 0) > 40 %}warning{% else %}success{% endif %}">
+                            {% if (avg_risk or 0) > 70 %}High Risk{% elif (avg_risk or 0) > 40 %}Medium Risk{% else %}Low Risk{% endif %}
+                        </span>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+
+<!-- Quick Stats -->
+<div class="stats-grid" style="margin-bottom: 2rem;">
+    <div class="stat-card">
+        <div class="stat-icon primary">
+            <i class="fas fa-database"></i>
+        </div>
+        <div class="stat-label">Total Employees</div>
+        <div class="stat-value">{{ employees|length }}</div>
+    </div>
+    
+    <div class="stat-card">
+        <div class="stat-icon success">
+            <i class="fas fa-smile"></i>
+        </div>
+        <div class="stat-label">High Satisfaction</div>
+        <div class="stat-value">
+            {{ employees|selectattr('job_satisfaction', 'ge', 4)|list|length }}
+        </div>
+    </div>
+    
+    <div class="stat-card">
+        <div class="stat-icon warning">
+            <i class="fas fa-clock"></i>
+        </div>
+        <div class="stat-label">Overtime Workers</div>
+        <div class="stat-value">
+            {{ employees|selectattr('overtime', 'equalto', 'Yes')|list|length }}
+        </div>
+    </div>
+    
+    <div class="stat-card">
+        <div class="stat-icon info">
+            <i class="fas fa-star"></i>
+        </div>
+        <div class="stat-label">High Performers</div>
+        <div class="stat-value">
+            {{ employees|selectattr('performance_rating', 'equalto', 3)|list|length }}
+        </div>
+    </div>
+</div>
+
+<!-- Instructions -->
+<div class="card">
+    <div class="card-header">
+        <h2 class="card-title">
+            <i class="fas fa-info-circle"></i>
+            How to Use ML Analytics
+        </h2>
+    </div>
+    
+    <div style="line-height: 1.8;">
+        <ol style="padding-left: 1.5rem; color: var(--text-secondary);">
+            <li style="margin-bottom: 1rem;">
+                <strong style="color: var(--text-primary);">Train Models:</strong> Click the "Train Models" button to train both Attrition and Performance prediction models using your current employee data. This process analyzes patterns and builds predictive models.
+            </li>
+            <li style="margin-bottom: 1rem;">
+                <strong style="color: var(--text-primary);">Predict All:</strong> After training, use "Predict All" to run predictions on all employees at once. This will generate attrition risk scores and performance predictions.
+            </li>
+            <li style="margin-bottom: 1rem;">
+                <strong style="color: var(--text-primary);">Individual Predictions:</strong> You can also predict for individual employees from the Employees page using the brain icon next to each employee.
+            </li>
+            <li style="margin-bottom: 1rem;">
+                <strong style="color: var(--text-primary);">View Results:</strong> Check the Dashboard and Reports pages to see prediction results, trends, and insights. All predictions are saved to the history for audit trails.
+            </li>
+        </ol>
+        
+        <div style="margin-top: 2rem; padding: 1.5rem; background: rgba(59, 130, 246, 0.1); border-radius: 0.75rem; border: 1px solid rgba(59, 130, 246, 0.3);">
+            <div style="display: flex; align-items: start; gap: 1rem;">
+                <i class="fas fa-lightbulb" style="font-size: 1.5rem; color: var(--info-color); flex-shrink: 0;"></i>
+                <div>
+                    <strong style="color: var(--info-color);">Pro Tip:</strong>
+                    <p style="margin-top: 0.5rem; margin-bottom: 0;">
+                        Regularly retrain your models as you add more employee data to improve prediction accuracy. 
+                        Look for patterns in high-risk departments and take proactive measures to improve employee retention.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

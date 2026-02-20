@@ -1,0 +1,175 @@
+{% extends "base.html" %}
+
+{% block title %}Reports - HR Analytics{% endblock %}
+
+{% block page_title %}Analytics Reports{% endblock %}
+
+{% block content %}
+<!-- Department Attrition Summary -->
+<div class="card" style="margin-bottom: 2rem;">
+    <div class="card-header">
+        <h2 class="card-title">
+            <i class="fas fa-chart-pie"></i>
+            Department Attrition Analysis
+        </h2>
+    </div>
+    
+    {% if dept_attrition %}
+    <div class="table-container">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Department</th>
+                    <th>Total Predictions</th>
+                    <th>Leave Count</th>
+                    <th>Attrition Rate</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for dept, total, leave_count in dept_attrition %}
+                {% set rate = (leave_count / total * 100) if total > 0 else 0 %}
+                <tr>
+                    <td><strong>{{ dept }}</strong></td>
+                    <td>{{ total }}</td>
+                    <td>{{ leave_count or 0 }}</td>
+                    <td>
+                        <div style="display: flex; align-items: center; gap: 1rem;">
+                            <div style="flex: 1; background: rgba(255,255,255,0.1); height: 8px; border-radius: 4px; overflow: hidden;">
+                                <div style="width: {{ rate|round(2) }}%; height: 100%; background: {% if rate > 30 %}var(--danger-color){% elif rate > 15 %}var(--warning-color){% else %}var(--success-color){% endif %};"></div>
+                            </div>
+                            <span style="min-width: 60px;"><strong>{{ rate|round(1) }}%</strong></span>
+                        </div>
+                    </td>
+                    <td>
+                        <span class="badge badge-{% if rate > 30 %}danger{% elif rate > 15 %}warning{% else %}success{% endif %}">
+                            {% if rate > 30 %}Critical{% elif rate > 15 %}Warning{% else %}Healthy{% endif %}
+                        </span>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div style="text-align: center; padding: 3rem; color: var(--text-muted);">
+        <i class="fas fa-chart-bar" style="font-size: 3rem; margin-bottom: 1rem; opacity: 0.5;"></i>
+        <p>No attrition data available yet. Run predictions to generate reports.</p>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Recent Prediction History -->
+<div class="card">
+    <div class="card-header">
+        <h2 class="card-title">
+            <i class="fas fa-history"></i>
+            Recent Prediction History (Last 50)
+        </h2>
+    </div>
+    
+    {% if recent_predictions %}
+    <div class="table-container">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Employee</th>
+                    <th>Prediction Type</th>
+                    <th>Result</th>
+                    <th>Confidence Score</th>
+                    <th>Timestamp</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for pred in recent_predictions %}
+                <tr>
+                    <td>
+                        <div>
+                            <strong>{{ pred.employee.name }}</strong>
+                            <div style="font-size: 0.8125rem; color: var(--text-muted);">
+                                {{ pred.employee.department }} - {{ pred.employee.job_role }}
+                            </div>
+                        </div>
+                    </td>
+                    <td>
+                        <span class="badge badge-{% if pred.prediction_type == 'Attrition' %}warning{% else %}info{% endif %}">
+                            <i class="fas fa-{% if pred.prediction_type == 'Attrition' %}exclamation-triangle{% else %}star{% endif %}"></i>
+                            {{ pred.prediction_type }}
+                        </span>
+                    </td>
+                    <td>
+                        <span class="badge badge-{% if pred.result == 'Leave' or pred.result == 'Low' %}danger{% elif pred.result == 'Medium' or pred.result == 'Stay' %}warning{% else %}success{% endif %}">
+                            {{ pred.result }}
+                        </span>
+                    </td>
+                    <td>
+                        <div style="display: flex; align-items: center; gap: 0.75rem;">
+                            <div style="flex: 1; max-width: 100px; background: rgba(255,255,255,0.1); height: 6px; border-radius: 3px; overflow: hidden;">
+                                <div style="width: {{ pred.confidence_score }}%; height: 100%; background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));"></div>
+                            </div>
+                            <span style="min-width: 50px; font-weight: 600;">{{ pred.confidence_score }}%</span>
+                        </div>
+                    </td>
+                    <td>
+                        <div style="font-size: 0.875rem;">
+                            {{ pred.timestamp.strftime('%Y-%m-%d') }}
+                            <span style="color: var(--text-muted);">{{ pred.timestamp.strftime('%H:%M') }}</span>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div style="text-align: center; padding: 3rem; color: var(--text-muted);">
+        <i class="fas fa-inbox" style="font-size: 3rem; margin-bottom: 1rem; opacity: 0.5;"></i>
+        <p>No prediction history yet. Run predictions to see results here.</p>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Key Insights -->
+{% if dept_attrition %}
+<div class="card" style="margin-top: 2rem; background: linear-gradient(135deg, rgba(236, 72, 153, 0.1), rgba(99, 102, 241, 0.05));">
+    <div class="card-header">
+        <h2 class="card-title">
+            <i class="fas fa-lightbulb"></i>
+            Key Insights
+        </h2>
+    </div>
+    
+    <div style="display: grid; gap: 1.5rem;">
+        {% set total_predictions = recent_predictions|length %}
+        {% set attrition_predictions = recent_predictions|selectattr('prediction_type', 'equalto', 'Attrition')|list %}
+        {% set leave_predictions = attrition_predictions|selectattr('result', 'equalto', 'Leave')|list %}
+        
+        {% if total_predictions > 0 %}
+        <div style="padding: 1rem; background: rgba(99, 102, 241, 0.1); border-radius: 0.75rem; border: 1px solid rgba(99, 102, 241, 0.2);">
+            <div style="display: flex; align-items: center; gap: 1rem;">
+                <i class="fas fa-chart-line" style="font-size: 2rem; color: var(--primary-color);"></i>
+                <div>
+                    <div style="font-size: 0.875rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em;">Overall Attrition Risk</div>
+                    <div style="font-size: 1.5rem; font-weight: 700; margin-top: 0.25rem;">
+                        {{ ((leave_predictions|length / attrition_predictions|length * 100) if attrition_predictions|length > 0 else 0)|round(1) }}%
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div style="padding: 1rem; background: rgba(16, 185, 129, 0.1); border-radius: 0.75rem; border: 1px solid rgba(16, 185, 129, 0.2);">
+            <div style="display: flex; align-items: center; gap: 1rem;">
+                <i class="fas fa-check-circle" style="font-size: 2rem; color: var(--success-color);"></i>
+                <div>
+                    <div style="font-size: 0.875rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em;">Retention Rate</div>
+                    <div style="font-size: 1.5rem; font-weight: 700; margin-top: 0.25rem;">
+                        {{ (((attrition_predictions|length - leave_predictions|length) / attrition_predictions|length * 100) if attrition_predictions|length > 0 else 0)|round(1) }}%
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,154 @@
+{% extends "base.html" %}
+
+{% block title %}Employees - HR Analytics{% endblock %}
+
+{% block page_title %}Employees{% endblock %}
+
+{% block header_actions %}
+<a href="{{ url_for('add_employee') }}" class="btn btn-primary">
+    <i class="fas fa-plus"></i>
+    Add Employee
+</a>
+{% endblock %}
+
+{% block content %}
+<!-- Filters -->
+<div class="card" style="margin-bottom: 2rem;">
+    <form method="GET" action="{{ url_for('employees') }}">
+        <div style="display: grid; grid-template-columns: 1fr 1fr auto; gap: 1rem; align-items: end;">
+            <div class="form-group" style="margin-bottom: 0;">
+                <label class="form-label" for="search">Search by Name</label>
+                <input type="text" 
+                       class="form-control" 
+                       id="search" 
+                       name="search" 
+                       value="{{ current_search }}"
+                       placeholder="Enter employee name">
+            </div>
+            
+            <div class="form-group" style="margin-bottom: 0;">
+                <label class="form-label" for="department">Department</label>
+                <select class="form-control" id="department" name="department">
+                    <option value="">All Departments</option>
+                    {% for dept in departments %}
+                    <option value="{{ dept }}" {% if dept == current_department %}selected{% endif %}>
+                        {{ dept }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-search"></i>
+                    Filter
+                </button>
+                <a href="{{ url_for('employees') }}" class="btn btn-secondary">
+                    <i class="fas fa-times"></i>
+                    Clear
+                </a>
+            </div>
+        </div>
+    </form>
+</div>
+
+<!-- Employees Table -->
+<div class="card">
+    <div class="card-header">
+        <h2 class="card-title">
+            <i class="fas fa-users"></i>
+            Employee List ({{ employees.total }} total)
+        </h2>
+    </div>
+    
+    {% if employees.items %}
+    <div class="table-container">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Department</th>
+                    <th>Job Role</th>
+                    <th>Age</th>
+                    <th>Salary</th>
+                    <th>Years</th>
+                    <th>Performance</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for employee in employees.items %}
+                <tr>
+                    <td><strong>{{ employee.name }}</strong></td>
+                    <td>{{ employee.department }}</td>
+                    <td>{{ employee.job_role }}</td>
+                    <td>{{ employee.age }}</td>
+                    <td>${{ '{:,.0f}'.format(employee.salary) }}</td>
+                    <td>{{ employee.years_at_company }}</td>
+                    <td>
+                        <span class="badge badge-{% if employee.performance_rating == 1 %}danger{% elif employee.performance_rating == 2 %}warning{% else %}success{% endif %}">
+                            {% if employee.performance_rating == 1 %}Low{% elif employee.performance_rating == 2 %}Medium{% else %}High{% endif %}
+                        </span>
+                    </td>
+                    <td>
+                        <div style="display: flex; gap: 0.5rem;">
+                            <a href="{{ url_for('edit_employee', id=employee.id) }}" 
+                               class="btn btn-secondary btn-sm"
+                               title="Edit">
+                                <i class="fas fa-edit"></i>
+                            </a>
+                            <button onclick="predictEmployee({{ employee.id }})" 
+                                    class="btn btn-primary btn-sm"
+                                    title="Predict">
+                                <i class="fas fa-brain"></i>
+                            </button>
+                            <button onclick="deleteEmployee({{ employee.id }}, '{{ employee.name }}')" 
+                                    class="btn btn-danger btn-sm"
+                                    title="Delete">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    
+    <!-- Pagination -->
+    {% if employees.pages > 1 %}
+    <div class="pagination">
+        {% if employees.has_prev %}
+        <a href="{{ url_for('employees', page=employees.prev_num, department=current_department, search=current_search) }}" 
+           class="page-link">
+            <i class="fas fa-chevron-left"></i>
+        </a>
+        {% endif %}
+        
+        {% for page_num in employees.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+            {% if page_num %}
+                <a href="{{ url_for('employees', page=page_num, department=current_department, search=current_search) }}" 
+                   class="page-link {% if page_num == employees.page %}active{% endif %}">
+                    {{ page_num }}
+                </a>
+            {% else %}
+                <span class="page-link">...</span>
+            {% endif %}
+        {% endfor %}
+        
+        {% if employees.has_next %}
+        <a href="{{ url_for('employees', page=employees.next_num, department=current_department, search=current_search) }}" 
+           class="page-link">
+            <i class="fas fa-chevron-right"></i>
+        </a>
+        {% endif %}
+    </div>
+    {% endif %}
+    {% else %}
+    <div style="text-align: center; padding: 3rem; color: var(--text-muted);">
+        <i class="fas fa-users-slash" style="font-size: 3rem; margin-bottom: 1rem; opacity: 0.5;"></i>
+        <p>No employees found. Try adjusting your filters or add new employees.</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
