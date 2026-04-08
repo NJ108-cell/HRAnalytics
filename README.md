@@ -14,10 +14,10 @@
 <img src="https://skillicons.dev/icons?i=python,flask,sqlite,html,css,js,git,github,vscode" alt="Tech Stack Icons" />
 
 </div>
-### Link:https://shields.io)](https://employee-insights-9.preview.emergentagent.com/
 
 ---
-
+## Link:https://shields.io)](https://employee-insights-9.preview.emergentagent.com/
+---
 ## 🔍 Concept Overview
 
 The **HR Analytics System** is a **design-level concept** for an internal platform that helps organizations **understand, monitor, and predict** employee behavior and outcomes using structured HR data.
