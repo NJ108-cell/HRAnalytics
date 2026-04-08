@@ -12,6 +12,7 @@
 <br/>
 
 <img src="https://skillicons.dev/icons?i=python,flask,sqlite,html,css,js,git,github,vscode" alt="Tech Stack Icons" />
+[![Alt Text](https://shields.io)](https://employee-insights-9.preview.emergentagent.com/)
 
 </div>
 
